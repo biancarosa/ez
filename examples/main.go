@@ -1,6 +1,7 @@
-package examples
+package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -12,24 +13,30 @@ const (
 )
 
 func MainHandler(w http.ResponseWriter, req *http.Request) {
-	fmt.Fprint(w, "Okay!")
+	route := req.Context().Value(ez.RouteKey).(ez.Route)
+	res, _ := route.Response.(HealthCheckResponse)
+	res.Message = "All good with this API."
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(res)
+}
+
+type HealthCheckResponse struct {
+	Message string `json:"message"`
 }
 
 func main() {
-	server := http.Server{
+	server := ez.New(&http.Server{
 		Addr: fmt.Sprintf(":%s", port),
-	}
-
-	fmt.Println("Running server on port", port)
+	})
 	routes := []ez.Route{
 		{
-			Handler: MainHandler,
-			Pattern: "/",
+			Handler:  MainHandler,
+			Pattern:  "/",
+			Method:   []string{http.MethodGet},
+			Response: HealthCheckResponse{},
 		}}
-	ez.RegisterRoutes(routes)
-	err := server.ListenAndServe()
-	if err != nil {
-		fmt.Println(err)
-	}
-	fmt.Println("Shutdown")
+	server.RegisterRoutes(routes)
+
+	server.ListenAndServe()
+
 }
