@@ -28,14 +28,14 @@ func main() {
 	server := ez.New(&http.Server{
 		Addr: fmt.Sprintf(":%s", port),
 	})
-	routes := []ez.Route{
-		{
-			Handler:  MainHandler,
-			Pattern:  "/",
-			Method:   []string{http.MethodGet},
-			Response: HealthCheckResponse{},
-		}}
-	server.RegisterRoutes(routes)
+	server.RegisterRoute(ez.Route{
+		Handler:  MainHandler,
+		Pattern:  "/",
+		Method:   []string{http.MethodGet},
+		Response: HealthCheckResponse{},
+	})
+
+	server.GenerateDocs()
 
 	server.ListenAndServe()
 
