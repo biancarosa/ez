@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	port = "5000"
+	port = "5005"
 )
 
 func MainHandler(w http.ResponseWriter, req *http.Request) {
@@ -38,5 +38,4 @@ func main() {
 	server.GenerateDocs()
 
 	server.ListenAndServe()
-
 }

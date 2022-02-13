@@ -15,33 +15,9 @@
   "openapi": "",
   "paths": {
     "/": {
-      "connect": {
-        "responses": null
-      },
-      "delete": {
-        "responses": null
-      },
       "get": {
         "operationId": "/-GET",
         "responses": {}
-      },
-      "head": {
-        "responses": null
-      },
-      "options": {
-        "responses": null
-      },
-      "patch": {
-        "responses": null
-      },
-      "post": {
-        "responses": null
-      },
-      "put": {
-        "responses": null
-      },
-      "trace": {
-        "responses": null
       }
     }
   }

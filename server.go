@@ -14,29 +14,6 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-type Route struct {
-	Handler  func(http.ResponseWriter, *http.Request)
-	Pattern  string
-	Method   []string // http.Method
-	Request  interface{}
-	Response interface{}
-}
-
-type RouteKeyType string
-
-const (
-	RouteKey RouteKeyType = "request"
-)
-
-func contains(s []string, e string) bool {
-	for _, a := range s {
-		if a == e {
-			return true
-		}
-	}
-	return false
-}
-
 type EZServer struct {
 	s *http.Server
 	r []Route
@@ -90,7 +67,7 @@ func (ez *EZServer) GenerateDocs() {
 		var resSchema *openapi3.SchemaRef
 		var err error
 		if route.Request != nil {
-			reqSchema, _, err = openapi3gen.NewSchemaRefForValue(route.Request)
+			reqSchema, err = openapi3gen.NewSchemaRefForValue(route.Request, nil)
 			if err != nil {
 				panic(err)
 			}
@@ -98,7 +75,7 @@ func (ez *EZServer) GenerateDocs() {
 			components.Schemas[t.Name()] = reqSchema
 		}
 		if route.Response != nil {
-			resSchema, _, err = openapi3gen.NewSchemaRefForValue(route.Response)
+			resSchema, err = openapi3gen.NewSchemaRefForValue(route.Response, nil)
 			if err != nil {
 				panic(err)
 			}
@@ -138,27 +115,21 @@ func (ez *EZServer) GenerateDocs() {
 	swagger.Paths = paths
 	b := &bytes.Buffer{}
 	err := json.NewEncoder(b).Encode(swagger)
-	checkErr(err)
+	checkError(err)
 
 	schema, err := yaml.JSONToYAML(b.Bytes())
-	checkErr(err)
+	checkError(err)
 
 	b = &bytes.Buffer{}
 	b.Write(schema)
 
 	doc, err := openapi3.NewLoader().LoadFromData(b.Bytes())
-	checkErr(err)
+	checkError(err)
 
 	jsonB, err := json.MarshalIndent(doc, "", "  ")
-	checkErr(err)
+	checkError(err)
 	err = ioutil.WriteFile("./openapi.json", jsonB, 0666)
-	checkErr(err)
+	checkError(err)
 	err = ioutil.WriteFile("./openapi.yaml", b.Bytes(), 0666)
-	checkErr(err)
-}
-
-func checkErr(err error) {
-	if err != nil {
-		panic(err)
-	}
+	checkError(err)
 }
