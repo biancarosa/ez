@@ -33,4 +33,3 @@ jobs:
       - name: vet
         run: go vet $(go list ./... | grep -v /vendor/)
           
-          
