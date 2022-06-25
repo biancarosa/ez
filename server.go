@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+
+	redoc "github.com/go-openapi/runtime/middleware"
 )
 
 type EZServer struct {
@@ -40,8 +42,21 @@ func (ez *EZServer) GetRoutes() []Route {
 	return ez.r
 }
 
+func RedocMiddleware(next http.Handler) http.Handler {
+	opt := redoc.RedocOpts{
+		SpecURL: "/openapi.json",
+	}
+	return redoc.Redoc(opt, next)
+}
 func (ez *EZServer) ListenAndServe() {
 	fmt.Println("Running server on", ez.s.Addr)
+	fmt.Println("Access docs on /docs")
+	http.HandleFunc("/openapi.json", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "./openapi.json")
+	})
+
+	// Redoc adds a middleware to serve /docs
+	ez.s.Handler = RedocMiddleware(ez.s.Handler)
 	err := ez.s.ListenAndServe()
 	if err != nil {
 		fmt.Println(err)
