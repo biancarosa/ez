@@ -3,7 +3,7 @@ module github.com/biancarosa/ez
 go 1.19
 
 require (
-	github.com/getkin/kin-openapi v0.97.0
+	github.com/getkin/kin-openapi v0.108.0
 	github.com/ghodss/yaml v1.0.0
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
 	golang.org/x/tools v0.1.9 // indirect
