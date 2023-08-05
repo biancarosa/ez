@@ -22,10 +22,13 @@ func (ez *EZServer) NotFound(rw http.ResponseWriter, r *http.Request) {
 	http.NotFound(rw, r)
 }
 
-func (ez *EZServer) RegisterRoute(route Route) {
-	ez.r = append(ez.r, route)
-	http.HandleFunc(route.Pattern, func(rw http.ResponseWriter, r *http.Request) {
-		if contains(route.Method, r.Method) {
+func matchesPattern(path, pattern string) bool {
+	return path == pattern
+}
+
+func (ez *EZServer) HandleFunc(route Route) func(rw http.ResponseWriter, r *http.Request) {
+	return func(rw http.ResponseWriter, r *http.Request) {
+		if contains(route.Method, r.Method) && matchesPattern(r.URL.Path, route.Pattern) {
 			ctx := context.WithValue(r.Context(), RouteKey, route)
 			r = r.WithContext(ctx)
 
@@ -33,7 +36,12 @@ func (ez *EZServer) RegisterRoute(route Route) {
 		} else {
 			ez.NotFound(rw, r)
 		}
-	})
+	}
+}
+
+func (ez *EZServer) RegisterRoute(route Route) {
+	ez.r = append(ez.r, route)
+	http.HandleFunc(route.Pattern, ez.HandleFunc(route))
 }
 
 func (ez *EZServer) GetRoutes() []Route {
