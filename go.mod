@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/getkin/kin-openapi v0.112.0
 	github.com/ghodss/yaml v1.0.0
-	sigs.k8s.io/yaml v1.3.0
+	sigs.k8s.io/yaml v1.4.0
 )
 
 require (
