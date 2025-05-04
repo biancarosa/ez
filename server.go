@@ -6,30 +6,30 @@ import (
 	"net/http"
 )
 
-type EZServer struct {
+type EZServer[T any, U any] struct {
 	s        *http.Server
-	r        []Route
+	r        []Route[T, U]
 	capacity int
 }
 
 // New creates a new EZServer with an initial capacity for routes
-func New(s *http.Server) *EZServer {
+func New[T any, U any](s *http.Server) *EZServer[T, U] {
 	const defaultRouteCapacity = 10
-	return &EZServer{
+	return &EZServer[T, U]{
 		s:        s,
-		r:        make([]Route, 0, defaultRouteCapacity),
+		r:        make([]Route[T, U], 0, defaultRouteCapacity),
 		capacity: defaultRouteCapacity,
 	}
 }
 
 // WithCapacity sets the initial capacity for routes
-func (ez *EZServer) WithCapacity(capacity int) *EZServer {
-	ez.r = make([]Route, 0, capacity)
+func (ez *EZServer[T, U]) WithCapacity(capacity int) *EZServer[T, U] {
+	ez.r = make([]Route[T, U], 0, capacity)
 	ez.capacity = capacity
 	return ez
 }
 
-func (ez *EZServer) NotFound(w http.ResponseWriter, r *http.Request) {
+func (ez *EZServer[T, U]) NotFound(w http.ResponseWriter, r *http.Request) {
 	http.NotFound(w, r)
 }
 
@@ -38,7 +38,7 @@ func matchesPattern(path, pattern string) bool {
 }
 
 // Handler returns an http.Handler that processes the route
-func (ez *EZServer) Handler(route Route) http.Handler {
+func (ez *EZServer[T, U]) Handler(route Route[T, U]) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !contains(route.Method, r.Method) || !matchesPattern(r.URL.Path, route.Pattern) {
 			ez.NotFound(w, r)
@@ -51,14 +51,14 @@ func (ez *EZServer) Handler(route Route) http.Handler {
 }
 
 // RegisterRoute registers a new route. If the slice needs to grow, it will double in capacity.
-func (ez *EZServer) RegisterRoute(route Route) {
+func (ez *EZServer[T, U]) RegisterRoute(route Route[T, U]) {
 	if len(ez.r) == cap(ez.r) {
 		// Double capacity when we need to grow
 		newCap := cap(ez.r) * 2
 		if newCap == 0 {
 			newCap = ez.capacity
 		}
-		newRoutes := make([]Route, len(ez.r), newCap)
+		newRoutes := make([]Route[T, U], len(ez.r), newCap)
 		copy(newRoutes, ez.r)
 		ez.r = newRoutes
 	}
@@ -67,9 +67,9 @@ func (ez *EZServer) RegisterRoute(route Route) {
 }
 
 // RegisterRoutes registers multiple routes at once, preallocating the necessary capacity
-func (ez *EZServer) RegisterRoutes(routes []Route) {
+func (ez *EZServer[T, U]) RegisterRoutes(routes []Route[T, U]) {
 	if needed := len(ez.r) + len(routes); needed > cap(ez.r) {
-		newRoutes := make([]Route, len(ez.r), needed)
+		newRoutes := make([]Route[T, U], len(ez.r), needed)
 		copy(newRoutes, ez.r)
 		ez.r = newRoutes
 	}
@@ -78,11 +78,11 @@ func (ez *EZServer) RegisterRoutes(routes []Route) {
 	}
 }
 
-func (ez *EZServer) GetRoutes() []Route {
+func (ez *EZServer[T, U]) GetRoutes() []Route[T, U] {
 	return ez.r
 }
 
-func (ez *EZServer) ListenAndServe() error {
+func (ez *EZServer[T, U]) ListenAndServe() error {
 	fmt.Println("Running server on", ez.s.Addr)
 	err := ez.s.ListenAndServe()
 	if err != nil && err != http.ErrServerClosed {
@@ -92,8 +92,8 @@ func (ez *EZServer) ListenAndServe() error {
 	return nil
 }
 
-func (ez *EZServer) GenerateDocs() error {
-	generator := DocsGenerator{
+func (ez *EZServer[T, U]) GenerateDocs() error {
+	generator := DocsGenerator[T, U]{
 		server: ez,
 	}
 	return generator.GenerateDocs()

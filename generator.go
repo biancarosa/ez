@@ -13,8 +13,8 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-type DocsGenerator struct {
-	server *EZServer
+type DocsGenerator[T any, U any] struct {
+	server *EZServer[T, U]
 	docs   OpenAPIDocs
 }
 
@@ -23,7 +23,7 @@ type OpenAPIDocs struct {
 	Paths      openapi3.Paths      `json:"paths,omitempty" yaml:"paths,omitempty"`
 }
 
-func (g *DocsGenerator) GenerateDocs() error {
+func (g *DocsGenerator[T, U]) GenerateDocs() error {
 	fmt.Println("Generating docs...")
 
 	components := openapi3.NewComponents()
@@ -49,11 +49,14 @@ func (g *DocsGenerator) GenerateDocs() error {
 	return nil
 }
 
-func (g *DocsGenerator) GenerateDocsForRoute(route Route) error {
+func (g *DocsGenerator[T, U]) GenerateDocsForRoute(route Route[T, U]) error {
 	var reqSchema *openapi3.SchemaRef
 	var resSchema *openapi3.SchemaRef
 	var err error
-	if route.Request != nil {
+
+	// Check if request type is not zero value
+	reqValue := reflect.ValueOf(route.Request)
+	if !reqValue.IsZero() {
 		reqSchema, err = openapi3gen.NewSchemaRefForValue(route.Request, nil)
 		if err != nil {
 			return fmt.Errorf("failed to generate request schema: %w", err)
@@ -61,7 +64,10 @@ func (g *DocsGenerator) GenerateDocsForRoute(route Route) error {
 		t := reflect.TypeOf(route.Request)
 		g.docs.Components.Schemas[t.Name()] = reqSchema
 	}
-	if route.Response != nil {
+
+	// Check if response type is not zero value
+	resValue := reflect.ValueOf(route.Response)
+	if !resValue.IsZero() {
 		resSchema, err = openapi3gen.NewSchemaRefForValue(route.Response, nil)
 		if err != nil {
 			return fmt.Errorf("failed to generate response schema: %w", err)
@@ -69,6 +75,7 @@ func (g *DocsGenerator) GenerateDocsForRoute(route Route) error {
 		t := reflect.TypeOf(route.Response)
 		g.docs.Components.Schemas[t.Name()] = resSchema
 	}
+
 	g.docs.Paths[route.Pattern] = &openapi3.PathItem{}
 	for _, method := range route.Method {
 		if method == http.MethodGet {
@@ -78,7 +85,7 @@ func (g *DocsGenerator) GenerateDocsForRoute(route Route) error {
 				Responses:   map[string]*openapi3.ResponseRef{},
 			}
 		}
-		if route.Request != nil {
+		if !reqValue.IsZero() {
 			g.docs.Paths[route.Pattern].Get.RequestBody = &openapi3.RequestBodyRef{
 				Value: &openapi3.RequestBody{
 					Required: true,
@@ -93,7 +100,7 @@ func (g *DocsGenerator) GenerateDocsForRoute(route Route) error {
 	return nil
 }
 
-func (g *DocsGenerator) GenerateOpenAPIFiles() error {
+func (g *DocsGenerator[T, U]) GenerateOpenAPIFiles() error {
 	b := &bytes.Buffer{}
 	err := json.NewEncoder(b).Encode(g.docs)
 	if err != nil {
