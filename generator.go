@@ -135,7 +135,7 @@ func (g *DocsGenerator[T, U]) GenerateDocsForRoute(route Route[T, U]) error {
 
 	// Check if request type is not zero value
 	reqValue := reflect.ValueOf(route.Request)
-	if !reqValue.IsZero() {
+	if reqValue.IsValid() && !reqValue.IsZero() {
 		reqSchema, err = openapi3gen.NewSchemaRefForValue(route.Request, nil)
 		if err != nil {
 			return fmt.Errorf("failed to generate request schema: %w", err)
@@ -147,7 +147,7 @@ func (g *DocsGenerator[T, U]) GenerateDocsForRoute(route Route[T, U]) error {
 
 	// Check if response type is not zero value
 	resValue := reflect.ValueOf(route.Response)
-	if !resValue.IsZero() {
+	if resValue.IsValid() && !resValue.IsZero() {
 		resSchema, err = openapi3gen.NewSchemaRefForValue(route.Response, nil)
 		if err != nil {
 			return fmt.Errorf("failed to generate response schema: %w", err)
@@ -173,7 +173,7 @@ func (g *DocsGenerator[T, U]) GenerateDocsForRoute(route Route[T, U]) error {
 		}
 
 		// Add request body if exists
-		if !reqValue.IsZero() {
+		if reqValue.IsValid() && !reqValue.IsZero() {
 			operation.RequestBody = &openapi3.RequestBodyRef{
 				Value: &openapi3.RequestBody{
 					Required: true,
@@ -187,7 +187,7 @@ func (g *DocsGenerator[T, U]) GenerateDocsForRoute(route Route[T, U]) error {
 		}
 
 		// Add response if exists
-		if !resValue.IsZero() {
+		if resValue.IsValid() && !resValue.IsZero() {
 			operation.Responses["200"] = &openapi3.ResponseRef{
 				Value: &openapi3.Response{
 					Description: ptr("Successful response"),

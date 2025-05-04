@@ -13,8 +13,8 @@ const (
 )
 
 func MainHandler(w http.ResponseWriter, req *http.Request) {
-	route := req.Context().Value(ez.RouteKey).(ez.Route)
-	res, _ := route.Response.(HealthCheckResponse)
+	route := req.Context().Value(ez.RouteKey).(ez.Route[any, HealthCheckResponse])
+	res := route.Response
 	res.Message = "All good with this API."
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(res)
@@ -25,10 +25,10 @@ type HealthCheckResponse struct {
 }
 
 func main() {
-	server := ez.New(&http.Server{
+	server := ez.NewWithOptions[any, HealthCheckResponse](&ez.ServerOptions{
 		Addr: fmt.Sprintf(":%s", port),
 	})
-	server.RegisterRoute(ez.Route{
+	server.RegisterRoute(ez.Route[any, HealthCheckResponse]{
 		Handler:  MainHandler,
 		Pattern:  "/",
 		Method:   []string{http.MethodGet},

@@ -148,7 +148,8 @@ func (ez *EZServer[T, U]) Shutdown(ctx context.Context) error {
 
 func (ez *EZServer[T, U]) GenerateDocs() error {
 	generator := DocsGenerator[T, U]{
-		server: ez,
+		server:   ez,
+		metadata: DefaultDocMetadata(),
 	}
 	return generator.GenerateDocs()
 }
