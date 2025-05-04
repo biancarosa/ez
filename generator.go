@@ -23,7 +23,7 @@ type OpenAPIDocs struct {
 	Paths      openapi3.Paths      `json:"paths,omitempty" yaml:"paths,omitempty"`
 }
 
-func (g *DocsGenerator) GenerateDocs() {
+func (g *DocsGenerator) GenerateDocs() error {
 	fmt.Println("Generating docs...")
 
 	components := openapi3.NewComponents()
@@ -35,23 +35,28 @@ func (g *DocsGenerator) GenerateDocs() {
 	}
 
 	for _, route := range g.server.GetRoutes() {
-		g.GenerateDocsForRoute(route)
+		if err := g.GenerateDocsForRoute(route); err != nil {
+			return fmt.Errorf("failed to generate docs for route %s: %w", route.Pattern, err)
+		}
 	}
 	fmt.Println("Creating files...")
 
-	g.GenerateOpenAPIFiles()
+	if err := g.GenerateOpenAPIFiles(); err != nil {
+		return fmt.Errorf("failed to generate OpenAPI files: %w", err)
+	}
 
 	fmt.Println("Docs generated!")
+	return nil
 }
 
-func (g *DocsGenerator) GenerateDocsForRoute(route Route) {
+func (g *DocsGenerator) GenerateDocsForRoute(route Route) error {
 	var reqSchema *openapi3.SchemaRef
 	var resSchema *openapi3.SchemaRef
 	var err error
 	if route.Request != nil {
-		reqSchema, err := openapi3gen.NewSchemaRefForValue(route.Request, nil)
+		reqSchema, err = openapi3gen.NewSchemaRefForValue(route.Request, nil)
 		if err != nil {
-			panic(err)
+			return fmt.Errorf("failed to generate request schema: %w", err)
 		}
 		t := reflect.TypeOf(route.Request)
 		g.docs.Components.Schemas[t.Name()] = reqSchema
@@ -59,7 +64,7 @@ func (g *DocsGenerator) GenerateDocsForRoute(route Route) {
 	if route.Response != nil {
 		resSchema, err = openapi3gen.NewSchemaRefForValue(route.Response, nil)
 		if err != nil {
-			panic(err)
+			return fmt.Errorf("failed to generate response schema: %w", err)
 		}
 		t := reflect.TypeOf(route.Response)
 		g.docs.Components.Schemas[t.Name()] = resSchema
@@ -85,26 +90,43 @@ func (g *DocsGenerator) GenerateDocsForRoute(route Route) {
 			}
 		}
 	}
+	return nil
 }
 
-func (g *DocsGenerator) GenerateOpenAPIFiles() {
+func (g *DocsGenerator) GenerateOpenAPIFiles() error {
 	b := &bytes.Buffer{}
 	err := json.NewEncoder(b).Encode(g.docs)
-	checkError(err)
+	if err != nil {
+		return fmt.Errorf("failed to encode docs to JSON: %w", err)
+	}
 
 	schema, err := yaml.JSONToYAML(b.Bytes())
-	checkError(err)
+	if err != nil {
+		return fmt.Errorf("failed to convert JSON to YAML: %w", err)
+	}
 
 	b = &bytes.Buffer{}
 	b.Write(schema)
 
 	doc, err := openapi3.NewLoader().LoadFromData(b.Bytes())
-	checkError(err)
+	if err != nil {
+		return fmt.Errorf("failed to load OpenAPI doc: %w", err)
+	}
 
 	jsonB, err := json.MarshalIndent(doc, "", "  ")
-	checkError(err)
+	if err != nil {
+		return fmt.Errorf("failed to marshal JSON: %w", err)
+	}
+
 	err = ioutil.WriteFile("./openapi.json", jsonB, 0666)
-	checkError(err)
+	if err != nil {
+		return fmt.Errorf("failed to write JSON file: %w", err)
+	}
+
 	err = ioutil.WriteFile("./openapi.yaml", b.Bytes(), 0666)
-	checkError(err)
+	if err != nil {
+		return fmt.Errorf("failed to write YAML file: %w", err)
+	}
+
+	return nil
 }

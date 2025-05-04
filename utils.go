@@ -1,5 +1,7 @@
 package ez
 
+import "fmt"
+
 func contains[T comparable](s []T, e T) bool {
 	for _, a := range s {
 		if a == e {
@@ -9,8 +11,9 @@ func contains[T comparable](s []T, e T) bool {
 	return false
 }
 
-func checkError(err error) {
+func checkError(err error) error {
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("ez operation failed: %w", err)
 	}
+	return nil
 }

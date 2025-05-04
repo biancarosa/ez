@@ -48,18 +48,19 @@ func (ez *EZServer) GetRoutes() []Route {
 	return ez.r
 }
 
-func (ez *EZServer) ListenAndServe() {
+func (ez *EZServer) ListenAndServe() error {
 	fmt.Println("Running server on", ez.s.Addr)
 	err := ez.s.ListenAndServe()
-	if err != nil {
-		fmt.Println(err)
+	if err != nil && err != http.ErrServerClosed {
+		return fmt.Errorf("server error: %w", err)
 	}
-	fmt.Println("Shutdown") // Todo register shutdown method
+	fmt.Println("Shutdown")
+	return nil
 }
 
-func (ez *EZServer) GenerateDocs() {
+func (ez *EZServer) GenerateDocs() error {
 	generator := DocsGenerator{
 		server: ez,
 	}
-	generator.GenerateDocs()
+	return generator.GenerateDocs()
 }
