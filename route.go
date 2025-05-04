@@ -10,8 +10,6 @@ type Route struct {
 	Response interface{}
 }
 
-type RouteKeyType string
+type routeKeyType struct{}
 
-const (
-	RouteKey RouteKeyType = "request"
-)
+var RouteKey = routeKeyType{}
