@@ -18,30 +18,30 @@ func New(s *http.Server) *EZServer {
 	}
 }
 
-func (ez *EZServer) NotFound(rw http.ResponseWriter, r *http.Request) {
-	http.NotFound(rw, r)
+func (ez *EZServer) NotFound(w http.ResponseWriter, r *http.Request) {
+	http.NotFound(w, r)
 }
 
 func matchesPattern(path, pattern string) bool {
 	return path == pattern
 }
 
-func (ez *EZServer) HandleFunc(route Route) func(rw http.ResponseWriter, r *http.Request) {
-	return func(rw http.ResponseWriter, r *http.Request) {
-		if contains(route.Method, r.Method) && matchesPattern(r.URL.Path, route.Pattern) {
-			ctx := context.WithValue(r.Context(), RouteKey, route)
-			r = r.WithContext(ctx)
-
-			route.Handler(rw, r)
-		} else {
-			ez.NotFound(rw, r)
+// Handler returns an http.Handler that processes the route
+func (ez *EZServer) Handler(route Route) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !contains(route.Method, r.Method) || !matchesPattern(r.URL.Path, route.Pattern) {
+			ez.NotFound(w, r)
+			return
 		}
-	}
+
+		ctx := context.WithValue(r.Context(), RouteKey, route)
+		route.Handler(w, r.WithContext(ctx))
+	})
 }
 
 func (ez *EZServer) RegisterRoute(route Route) {
 	ez.r = append(ez.r, route)
-	http.HandleFunc(route.Pattern, ez.HandleFunc(route))
+	http.Handle(route.Pattern, ez.Handler(route))
 }
 
 func (ez *EZServer) GetRoutes() []Route {
