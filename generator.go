@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
+	"os"
 	"reflect"
 
 	"github.com/getkin/kin-openapi/openapi3"
@@ -118,12 +118,12 @@ func (g *DocsGenerator) GenerateOpenAPIFiles() error {
 		return fmt.Errorf("failed to marshal JSON: %w", err)
 	}
 
-	err = ioutil.WriteFile("./openapi.json", jsonB, 0666)
+	err = os.WriteFile("./openapi.json", jsonB, 0666)
 	if err != nil {
 		return fmt.Errorf("failed to write JSON file: %w", err)
 	}
 
-	err = ioutil.WriteFile("./openapi.yaml", b.Bytes(), 0666)
+	err = os.WriteFile("./openapi.yaml", b.Bytes(), 0666)
 	if err != nil {
 		return fmt.Errorf("failed to write YAML file: %w", err)
 	}
