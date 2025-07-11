@@ -1,6 +1,6 @@
 module github.com/biancarosa/ez
 
-go 1.19
+go 1.21
 
 require (
 	github.com/getkin/kin-openapi v0.112.0
