@@ -1,6 +1,8 @@
 package ez
 
-import "net/http"
+import (
+	"net/http"
+)
 
 // Route represents a single HTTP route with generic request and response types
 type Route[T any, U any] struct {

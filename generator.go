@@ -97,7 +97,7 @@ func (g *DocsGenerator[T, U]) GenerateDocs() error {
 		},
 		Servers:    g.metadata.Servers,
 		Components: openapi3.NewComponents(),
-		Paths:      make(map[string]*openapi3.PathItem),
+		Paths:      *openapi3.NewPaths(),
 		Tags:       g.metadata.Tags,
 	}
 
@@ -158,8 +158,10 @@ func (g *DocsGenerator[T, U]) GenerateDocsForRoute(route Route[T, U]) error {
 	}
 
 	// Initialize path item if not exists
-	if _, exists := g.docs.Paths[route.Pattern]; !exists {
-		g.docs.Paths[route.Pattern] = &openapi3.PathItem{}
+	pathItem := g.docs.Paths.Value(route.Pattern)
+	if pathItem == nil {
+		pathItem = &openapi3.PathItem{}
+		g.docs.Paths.Set(route.Pattern, pathItem)
 	}
 
 	// Process each HTTP method
@@ -169,7 +171,7 @@ func (g *DocsGenerator[T, U]) GenerateDocsForRoute(route Route[T, U]) error {
 			Summary:     fmt.Sprintf("%s %s", method, route.Pattern),
 			Tags:        []string{getTagFromPath(route.Pattern)},
 			Parameters:  []*openapi3.ParameterRef{},
-			Responses:   make(map[string]*openapi3.ResponseRef),
+			Responses:   openapi3.NewResponses(),
 		}
 
 		// Add request body if exists
@@ -188,7 +190,7 @@ func (g *DocsGenerator[T, U]) GenerateDocsForRoute(route Route[T, U]) error {
 
 		// Add response if exists
 		if resValue.IsValid() && !resValue.IsZero() {
-			operation.Responses["200"] = &openapi3.ResponseRef{
+			operation.Responses.Set("200", &openapi3.ResponseRef{
 				Value: &openapi3.Response{
 					Description: ptr("Successful response"),
 					Content: map[string]*openapi3.MediaType{
@@ -197,21 +199,20 @@ func (g *DocsGenerator[T, U]) GenerateDocsForRoute(route Route[T, U]) error {
 						},
 					},
 				},
-			}
+			})
 		}
-
 		// Add operation to path item based on method
 		switch method {
 		case http.MethodGet:
-			g.docs.Paths[route.Pattern].Get = operation
+			pathItem.Get = operation
 		case http.MethodPost:
-			g.docs.Paths[route.Pattern].Post = operation
+			pathItem.Post = operation
 		case http.MethodPut:
-			g.docs.Paths[route.Pattern].Put = operation
+			pathItem.Put = operation
 		case http.MethodDelete:
-			g.docs.Paths[route.Pattern].Delete = operation
+			pathItem.Delete = operation
 		case http.MethodPatch:
-			g.docs.Paths[route.Pattern].Patch = operation
+			pathItem.Patch = operation
 		}
 	}
 
