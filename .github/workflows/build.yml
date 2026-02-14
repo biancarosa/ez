@@ -12,12 +12,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: check out code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: set up Go 1.x
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v6
         with:
-          go-version: '1.21'
+          go-version: '1.26'
       
       - name: get lint
         run: go get -u golang.org/x/lint/golint
