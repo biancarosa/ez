@@ -1,6 +1,8 @@
 package ez
 
-import "fmt"
+import (
+	"fmt"
+)
 
 func contains[T comparable](s []T, e T) bool {
 	for _, a := range s {
